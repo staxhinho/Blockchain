@@ -1,10 +1,10 @@
 import inquirer from "inquirer";
 import * as readline from "readline-sync";
-import { Wallet } from "./blockchain";
+import { Wallet } from "../blockchain";
 
 const wallets: { [address: string]: Wallet } = {}; // Store wallets in memory.
 
-export class UserCli {
+export class LogIn {
     constructor() {
         console.log("Welcome to the blockchain!");
 

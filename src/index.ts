@@ -1,6 +1,6 @@
-import { UserCli } from "./usercli";
+import { LogIn } from "./cli/login";
 
-const user = new UserCli();
+new LogIn();
 
 /*import { Wallet } from "./blockchain";
 import { Chain } from "./blockchain";
