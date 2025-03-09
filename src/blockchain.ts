@@ -2,6 +2,7 @@ import * as bip39 from 'bip39';
 import * as crypto from 'crypto';
 import { BIP32Factory } from 'bip32';
 import * as ecc from 'tiny-secp256k1';
+import { loadData, saveData } from './cli';
 
 const bip32 = BIP32Factory(ecc);
 
@@ -112,12 +113,41 @@ export class Wallet {
     }
 
     sendMoney(amount: number, payeePublicKey: string) {
-        const transaction = new Transaction(amount, this.publicKey, payeePublicKey);
+        const data = loadData();
 
+        //Check if sender exists in balance records.
+        if (!data.balances[this.publicKey]) {
+            console.log("❌ Sender wallet does not exist in balance records.");
+            return;
+        }
+
+        // Check if sender has enough Stash.
+        if (data.balances[this.publicKey] < amount) {
+            console.log("❌ Insufficient balance.");
+            return;
+        }
+
+        // Deduct balance from sender.
+        data.balances[this.publicKey] -= amount;
+
+        // Add balance to recipient (initialize if not present).
+        if (!data.balances[payeePublicKey]) {
+            data.balances[payeePublicKey] = 0;
+        }
+        data.balances[payeePublicKey] += amount;
+
+        // Create transaction and add to the blockchain
+        const transaction = new Transaction(amount, this.publicKey, payeePublicKey);
         const sign = crypto.createSign('SHA256');
         sign.update(transaction.toString()).end();
-
         const signature = sign.sign(this.privateKey);
+
         Chain.instance.addBlock(transaction, signature);
+
+        // Save updated balances
+        saveData(data);
+
+        console.log(`✅ Sent ${amount} Stash to ${payeePublicKey}.`);
+        console.log(`New Balance: ${data.balances[this.publicKey]} Stash`);
     }
 }
