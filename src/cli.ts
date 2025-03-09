@@ -1,8 +1,21 @@
 import inquirer from "inquirer";
 import * as readline from "readline-sync";
-import { Wallet } from "../blockchain";
+import { Wallet } from "./blockchain";
+import fs from 'fs';
 
-const wallets: { [address: string]: Wallet } = {}; // Store wallets in memory.
+const databaseLocation = './src/database.json';
+
+export const saveData = (data: object) => {
+    fs.writeFileSync(databaseLocation, JSON.stringify(data, null, 2));
+};
+
+export const loadData = (): any => {
+    if (!fs.existsSync(databaseLocation)) return { wallets: {}, blockchain: [] };
+    return JSON.parse(fs.readFileSync(databaseLocation, 'utf-8'));
+};
+
+const data = loadData();
+const wallets = data.wallets;
 
 export class LogIn {
     constructor() {
@@ -42,10 +55,18 @@ export class LogIn {
         const accountIndex = Object.keys(wallets).length; // Assign a unique index.
         const wallet = new Wallet(undefined, accountIndex);
 
-        wallets[wallet.publicKey] = wallet;
+        wallets[wallet.publicKey] = {
+            mnemonic: wallet.mnemonic,
+            privateKey: wallet.privateKey,
+            publicKey: wallet.publicKey
+        };
+
+        saveData({ ...data, wallets });
+        console.log("New wallet saved!");
         console.log("New wallet created!");
         console.log("Mnemonic (SAVE THIS!):", wallet.mnemonic);
-        console.log("Public Key:", wallet.publicKey);
+        //console.log("Public key: \n", wallet.publicKey);
+        this.loginWallet()
     }
 
     async loginWallet() {
@@ -56,7 +77,7 @@ export class LogIn {
             const wallet = new Wallet(mnemonic, accountIndex);
             wallets[wallet.publicKey] = wallet;
             console.log("Wallet loaded! \n")
-            console.log("Public key: \n", wallet.publicKey);
+            //console.log("Public key: \n", wallet.publicKey);
         } catch (error) {
             console.log("❌ Invalid Mnemonic. Please try again.");
         }

@@ -1,4 +1,4 @@
-import { LogIn } from "./cli/login";
+import { LogIn } from "./cli";
 
 new LogIn();
 
