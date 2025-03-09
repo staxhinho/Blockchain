@@ -1,13 +1,17 @@
 import inquirer from "inquirer";
+import * as readline from "readline-sync";
+import { Wallet } from "./blockchain";
+
+const wallets: { [address: string]: Wallet } = {}; // Store wallets in memory.
 
 export class UserCli {
     constructor() {
         console.log("Welcome to the blockchain!");
 
-        this.showMenu();
+        this.firstMenu();
     }
 
-    async showMenu() {
+    async firstMenu() {
         const choices = ["Sign In", "Log In", "Exit"];
 
         const answer = await inquirer.prompt([
@@ -23,10 +27,10 @@ export class UserCli {
 
         switch (answer.option) {
             case "Sign In":
-                this.signIn();
+                this.createWallet();
                 break;
             case "Log In":
-                this.logIn();
+                this.loginWallet();
                 break;
             case "Exit":
                 console.log("Exiting...");
@@ -34,11 +38,27 @@ export class UserCli {
         }
     }
 
-    async signIn() {
-        console.log("Signingin")
+    async createWallet() {
+        const accountIndex = Object.keys(wallets).length; // Assign a unique index.
+        const wallet = new Wallet(undefined, accountIndex);
+
+        wallets[wallet.publicKey] = wallet;
+        console.log("New wallet created!");
+        console.log("Mnemonic (SAVE THIS!):", wallet.mnemonic);
+        console.log("Public Key:", wallet.publicKey);
     }
 
-    async logIn() {
-        console.log("logingin")
+    async loginWallet() {
+        const mnemonic = readline.question("Enter your mnemonic phrase: ");
+        const accountIndex = Object.keys(wallets).length; // Load next account.
+
+        try {
+            const wallet = new Wallet(mnemonic, accountIndex);
+            wallets[wallet.publicKey] = wallet;
+            console.log("Wallet loaded! \n")
+            console.log("Public key: \n", wallet.publicKey);
+        } catch (error) {
+            console.log("❌ Invalid Mnemonic. Please try again.");
+        }
     }
 }

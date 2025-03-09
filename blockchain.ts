@@ -1,4 +1,9 @@
+import * as bip39 from 'bip39';
 import * as crypto from 'crypto';
+import { BIP32Factory } from 'bip32';
+import * as ecc from 'tiny-secp256k1';
+
+const bip32 = BIP32Factory(ecc);
 
 export class Transaction {
     constructor(
@@ -79,8 +84,23 @@ export class Chain {
 export class Wallet {
     public publicKey: string;
     public privateKey: string;
+    public mnemonic: string;
 
-    constructor() {
+    constructor(mnemonic?: string, accountIndex: number = 0) {
+        if (mnemonic) {
+            //Restore wallet from existing mnemonic.
+            this.mnemonic = mnemonic;
+        } else {
+            //Generate a new mnemonic.
+            this.mnemonic = bip39.generateMnemonic();
+        }
+
+        //Create HD wallet seed.
+        const seed = bip39.mnemonicToSeedSync(this.mnemonic);
+        const root = bip32.fromSeed(seed); //Not working
+
+        // Derive account-specific key (BIP44 path: m/44'/0'/accountIndex').
+        const account = root.derivePath(`m/44'/0'/${accountIndex}'`);
         const keypair = crypto.generateKeyPairSync('rsa', {
             modulusLength: 2048,
             publicKeyEncoding: {type: 'spki', format: 'pem'},
